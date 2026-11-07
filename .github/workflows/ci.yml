@@ -1,0 +1,30 @@
+name: CI chatbot-service (Java 21)
+on:
+  pull_request:
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: chatbot-ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Compilar y verificar propagación JWT, Feign, Eureka y Prometheus con fixtures locales
+        run: ./mvnw -B --no-transfer-progress verify
+      - name: Construir imagen con JRE fijado por digest
+        run: docker build -t chatbot-service:ci .
+      - name: Smoke del contenedor sin IA real ni base de datos
+        run: python3 ci/smoke.py
