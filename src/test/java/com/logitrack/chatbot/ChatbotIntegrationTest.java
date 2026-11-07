@@ -42,6 +42,8 @@ import static org.assertj.core.api.Assertions.assertThat;
         "spring.ai.openai.chat.options.model=fixture-model", "eureka.client.fetch-registry=false",
         "eureka.client.initial-instance-info-replication-interval-seconds=1",
         "eureka.instance.lease-renewal-interval-in-seconds=5"})
+@org.springframework.test.context.ActiveProfiles("test")
+@org.springframework.boot.test.autoconfigure.actuate.observability.AutoConfigureObservability
 @Import(ChatbotIntegrationTest.Probes.class)
 class ChatbotIntegrationTest {
     static final KeyPair KEYS;
