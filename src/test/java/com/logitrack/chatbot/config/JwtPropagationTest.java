@@ -8,6 +8,7 @@ import feign.RequestTemplate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
@@ -20,6 +21,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Schedulers;
 
 import static org.assertj.core.api.Assertions.*;
@@ -82,6 +84,34 @@ class JwtPropagationTest {
                 }).subscribeOn(scheduler).flux());
                 JwtRelayContext.clear();
                 assertThatThrownBy(() -> failed.blockLast(Duration.ofSeconds(5))).isInstanceOf(IllegalStateException.class);
+                assertThat(executor.submit(JwtRelayContext::get).get(2, TimeUnit.SECONDS)).isNull();
+            } finally { scheduler.dispose(); }
+        }
+    }
+
+    @Test void cancellationClearsIdentityFromReusedWorker() throws Exception {
+        try (var executor = Executors.newSingleThreadExecutor()) {
+            var scheduler = Schedulers.fromExecutorService(executor);
+            try {
+                executor.submit(() -> {}).get(2, TimeUnit.SECONDS);
+                var seen = new java.util.concurrent.CopyOnWriteArrayList<String>();
+                var received = new CountDownLatch(1);
+                Sinks.Many<String> sink = Sinks.many().unicast().onBackpressureBuffer();
+                JwtRelayContext.set(jwt("cancel-user"));
+                Flux<String> published = sink.asFlux().publishOn(scheduler);
+                Flux<String> source = published.doOnNext(fragment -> {
+                            seen.add(header());
+                            received.countDown();
+                        });
+                Flux<String> stream = JwtRelayContext.<String>propagate(source);
+                JwtRelayContext.clear();
+
+                var subscription = stream.subscribe();
+                sink.tryEmitNext("fragment");
+                assertThat(received.await(2, TimeUnit.SECONDS)).isTrue();
+                assertThat(seen).containsExactly("Bearer cancel-user");
+
+                subscription.dispose();
                 assertThat(executor.submit(JwtRelayContext::get).get(2, TimeUnit.SECONDS)).isNull();
             } finally { scheduler.dispose(); }
         }
