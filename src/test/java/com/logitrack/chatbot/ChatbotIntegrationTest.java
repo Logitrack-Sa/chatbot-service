@@ -126,9 +126,9 @@ class ChatbotIntegrationTest {
 
     @Test void metricsDiscoveryAndAiBuilderAreAvailableWithoutCloudCalls() throws Exception {
         assertThat(get("/actuator/health", null).statusCode()).isEqualTo(200);
-        var metrics = get("/actuator/prometheus", null);
-        assertThat(metrics.statusCode()).isEqualTo(200);
-        assertThat(metrics.body()).contains("jvm_memory_used_bytes");
+        // Sin listener de gestión separado (Sprint 3/local) prometheus no debe servirse en el puerto de negocio.
+        // La exposición efectiva de Sprint 4 se valida en ManagementListenerSeparationTest.
+        assertThat(get("/actuator/prometheus", null).statusCode()).isIn(401, 403, 404);
         assertThat(chatClientBuilder).isNotNull();
         assertThat(REGISTERED.await(15, TimeUnit.SECONDS)).isTrue();
     }

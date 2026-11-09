@@ -61,12 +61,13 @@ try:
             "-e", "EUREKA_CLIENT_INITIAL_INSTANCE_INFO_REPLICATION_INTERVAL_SECONDS=1",
             "-e", "JWT_PUBLIC_KEY_LOCATION=file:/secrets/public.pem",
             "-e", "AI_API_KEY=ci-fixture-not-a-real-key", "-e", "AI_MODEL=fixture-model",
+            "-e", "MANAGEMENT_SERVER_PORT=8094", "-e", "MANAGEMENT_SERVER_ADDRESS=127.0.0.1",
             "-v", str(fixture / "public.pem") + ":/secrets/public.pem:ro", "chatbot-service:ci"
         ], text=True).strip()
         try:
             for _ in range(90):
                 try:
-                    with urllib.request.urlopen("http://127.0.0.1:8084/actuator/health", timeout=2) as response:
+                    with urllib.request.urlopen("http://127.0.0.1:8094/actuator/health", timeout=2) as response:
                         if json.load(response)["status"] == "UP":
                             break
                 except (OSError, ValueError, KeyError):
@@ -74,9 +75,14 @@ try:
                 time.sleep(1)
             else:
                 raise AssertionError("El chatbot no alcanzó estado UP")
-            with urllib.request.urlopen("http://127.0.0.1:8084/actuator/prometheus", timeout=3) as response:
+            with urllib.request.urlopen("http://127.0.0.1:8094/actuator/prometheus", timeout=3) as response:
                 metrics = response.read().decode()
                 assert "jvm_memory_used_bytes" in metrics and 'fixture="ci-config"' in metrics
+            try:
+                urllib.request.urlopen("http://127.0.0.1:8084/actuator/prometheus", timeout=3)
+                raise AssertionError("El listener de negocio expuso /actuator/prometheus")
+            except urllib.error.HTTPError as failure:
+                assert failure.code in (401, 403, 404)
             assert registered.wait(15), "No se registró CHATBOT-SERVICE en Eureka"
             try:
                 urllib.request.urlopen("http://127.0.0.1:8084/api/v1/chat/stream", timeout=3)
