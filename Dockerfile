@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21-jre@sha256:0b99b3376fbb50dbf9c0af8535fdd5b8eb0d3fdfc8b1e4967f383b6919f6901a
+FROM eclipse-temurin:25-jre@sha256:dbb43d81099eec91e0800226ed2296d03146ee7857165b95112372ad0d67e87f
 WORKDIR /app
 RUN groupadd --gid 10001 spring && useradd --uid 10001 --gid spring --no-create-home spring && mkdir /secrets
 COPY target/chatbot-service-*.jar /app/app.jar

@@ -1,6 +1,6 @@
 # chatbot-service
 
-Base stateless del chatbot de LogiTrack (#103): Java 21, Spring Boot 3.5.16,
+Base stateless del chatbot de LogiTrack (#103): Java 25, Spring Boot 3.5.16,
 Spring Cloud 2025.0.3, Spring AI 1.1.8, OpenFeign, Config Server, Eureka,
 OAuth2 Resource Server y Actuator Prometheus. No incluye JDBC, JPA ni MySQL.
 Incluye las herramientas `@Tool`, el prompt logístico y el endpoint SSE de la
@@ -124,7 +124,7 @@ Los endpoints probe existen **solo en tests**.
 El smoke posterior en CI ejecuta la imagen con 350 MB, Config Server y Eureka
 simulados, PEM efímero, métricas, rechazo de peticiones sin JWT y UID 10001.
 
-El `Dockerfile` requiere el JAR de `./mvnw package` y fija el JRE 21 por digest.
+El `Dockerfile` requiere el JAR de `./mvnw package` y fija el JRE 25 por digest.
 La integración del stack está en `Logitrack-Sa/deploy/docker/Dockerfile.chatbot`
 y `docker-compose.yml`, con heap de 224 MB, límite de 350M y solo public.pem montado.
 No ejecutar el stack completo en equipos con pocos recursos para validar este cambio.
