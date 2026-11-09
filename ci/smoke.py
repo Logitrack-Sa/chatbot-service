@@ -67,7 +67,7 @@ try:
         try:
             for _ in range(90):
                 try:
-                    with urllib.request.urlopen("http://127.0.0.1:8084/actuator/health", timeout=2) as response:
+                    with urllib.request.urlopen("http://127.0.0.1:8094/actuator/health", timeout=2) as response:
                         if json.load(response)["status"] == "UP":
                             break
                 except (OSError, ValueError, KeyError):
