@@ -143,6 +143,13 @@ class ChatbotIntegrationTest {
         assertThat(HEADERS).doesNotContainKey("/api/v1/shipments/tracking/security");
     }
 
+    @Test void anonymousChatOnlyAllowsThePublicEndpoint() throws Exception {
+        var request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+"/api/v1/chat/public/message"))
+                .header("Content-Type","application/json").POST(HttpRequest.BodyPublishers.ofString("{\"prompt\":\" \"}")).build();
+        assertThat(http.send(request,HttpResponse.BodyHandlers.ofString()).statusCode()).isEqualTo(400);
+        assertThat(get("/api/v1/chat/stream?prompt=Hola",null).statusCode()).isEqualTo(401);
+    }
+
     @Test void mvcFluxAndAsyncFeignCallsRelayTheSameJwt() throws Exception {
         String jwt = validToken();
         var streamed = get("/api/v1/chat/probe?code=flux", jwt);
