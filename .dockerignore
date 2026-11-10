@@ -1,5 +1,7 @@
-*
-!target/
-target/*
-!target/chatbot-service-*.jar
-!Dockerfile
+.git
+.idea
+.env
+.env.*
+target
+certs
+*.log
